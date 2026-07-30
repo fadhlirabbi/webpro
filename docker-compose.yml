@@ -1,0 +1,49 @@
+services:
+  # Frontend - Nginx
+  webpro-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webpro-admin-dashboard
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - webpro-network
+
+  # Backend - Express API
+  webpro-backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: webpro-admin-backend
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - webpro-network
+      - crud-penjualan_crud_network
+
+networks:
+  webpro-network:
+    driver: bridge
+  crud-penjualan_crud_network:
+    external: true

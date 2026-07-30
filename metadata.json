@@ -1,0 +1,6 @@
+{
+  "name": "WebPro Admin Dashboard",
+  "description": "Sistem Manajemen Penjualan & Inventaris WebPro dengan fitur Dashboard, Suppliers, Barang, Pembeli, Transaksi, Pembayaran, dan Cetak Laporan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
