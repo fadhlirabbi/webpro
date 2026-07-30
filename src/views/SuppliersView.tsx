@@ -10,7 +10,6 @@ interface SuppliersViewProps {
   onAddSupplier: (supplier: Omit<Supplier, 'id'>) => void;
   onUpdateSupplier: (supplier: Supplier) => void;
   onDeleteSupplier: (id: string) => void;
-  onOpenHotlinkUtility: (url?: string) => void;
 }
 
 export const SuppliersView: React.FC<SuppliersViewProps> = ({
@@ -19,7 +18,6 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({
   onAddSupplier,
   onUpdateSupplier,
   onDeleteSupplier,
-  onOpenHotlinkUtility,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);

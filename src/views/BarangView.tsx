@@ -11,7 +11,6 @@ interface BarangViewProps {
   onAddItem: (item: Omit<ItemBarang, 'id'>) => void;
   onUpdateItem: (item: ItemBarang) => void;
   onDeleteItem: (id: string) => void;
-  onOpenHotlinkUtility: (url?: string) => void;
 }
 
 export const BarangView: React.FC<BarangViewProps> = ({
@@ -21,7 +20,6 @@ export const BarangView: React.FC<BarangViewProps> = ({
   onAddItem,
   onUpdateItem,
   onDeleteItem,
-  onOpenHotlinkUtility,
 }) => {
   const [viewLayout, setViewLayout] = useState<'grid' | 'table'>('table');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');

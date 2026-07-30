@@ -39,13 +39,42 @@ interface DashboardViewProps {
 }
 
 const SALES_CHART_DATA = [
-  { month: 'Mei', omset: 2100000000, transaksi: 180 },
-  { month: 'Jun', omset: 2800000000, transaksi: 220 },
-  { month: 'Jul', omset: 3200000000, transaksi: 290 },
-  { month: 'Agt', omset: 3000000000, transaksi: 260 },
-  { month: 'Sep', omset: 3900000000, transaksi: 340 },
-  { month: 'Okt', omset: 4200000000, transaksi: 410 },
+  { month: 'Mei', omset: 0, transaksi: 0 },
+  { month: 'Jun', omset: 0, transaksi: 0 },
+  { month: 'Jul', omset: 0, transaksi: 0 },
+  { month: 'Agt', omset: 0, transaksi: 0 },
+  { month: 'Sep', omset: 0, transaksi: 0 },
+  { month: 'Okt', omset: 0, transaksi: 0 },
 ];
+
+// Calculate growth from transactions
+const calculateGrowthData = () => {
+  const monthlyData: { [key: string]: { omset: number; transaksi: number } } = {};
+
+  // Initialize all months with zero
+  const months = ['Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt'];
+  months.forEach(m => {
+    monthlyData[m] = { omset: 0, transaksi: 0 };
+  });
+
+  // Aggregate from real transactions
+  transactions.forEach(t => {
+    const month = t.date?.split(' ')[2] || t.date?.split('-')[1] || '';
+    if (monthlyData[month]) {
+      monthlyData[month].omset += t.totalAmount;
+      monthlyData[month].transaksi += 1;
+    }
+  });
+
+  return months.map(m => ({
+    month: m,
+    omset: monthlyData[m].omset,
+    transaksi: monthlyData[m].transaksi
+  }));
+};
+
+const chartData = calculateGrowthData();
+const hasData = chartData.some(d => d.omset > 0);
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   suppliers,
@@ -506,7 +535,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={SALES_CHART_DATA}>
+            <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="cyanGlow" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
@@ -528,6 +557,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </AreaChart>
           </ResponsiveContainer>
         </div>
+        {!hasData && (
+          <p className="text-center text-xs text-slate-500 mt-2">Belum ada data transaksi untuk ditampilkan</p>
+        )}
       </div>
 
       {/* Recent Transactions Table */}

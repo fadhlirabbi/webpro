@@ -10,7 +10,6 @@ interface PembeliViewProps {
   onAddPembeli: (buyer: Omit<Pembeli, 'id' | 'totalOrders' | 'totalSpent' | 'joinDate'>) => void;
   onUpdatePembeli: (buyer: Pembeli) => void;
   onDeletePembeli: (id: string) => void;
-  onOpenHotlinkUtility: (url?: string) => void;
 }
 
 export const PembeliView: React.FC<PembeliViewProps> = ({
@@ -19,7 +18,6 @@ export const PembeliView: React.FC<PembeliViewProps> = ({
   onAddPembeli,
   onUpdatePembeli,
   onDeletePembeli,
-  onOpenHotlinkUtility,
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);

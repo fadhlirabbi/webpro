@@ -3,7 +3,6 @@ import { ViewMode, Supplier, ItemBarang, Pembeli, Transaction, Payment, Transact
 
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { HotlinkHelperModal } from './components/HotlinkHelperModal';
 import { PrintReportModal } from './components/PrintReportModal';
 import { NotaModal } from './components/NotaModal';
 import { LoginForm } from './components/LoginForm';
@@ -19,7 +18,7 @@ import { PembayaranView } from './views/PembayaranView';
 import { HelpView } from './views/HelpView';
 import { AdminView } from './views/AdminView';
 
-import { CheckCircle2, Lock, Sparkles, UserCheck } from 'lucide-react';
+import { CheckCircle2, Lock, UserCheck } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8082/api';
 
@@ -37,8 +36,6 @@ export default function App() {
 
   // Modals & UI state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isHotlinkModalOpen, setIsHotlinkModalOpen] = useState(false);
-  const [hotlinkInitialUrl, setHotlinkInitialUrl] = useState('');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [notaTransaction, setNotaTransaction] = useState<Transaction | null>(null);
   const [isNotaOpen, setIsNotaOpen] = useState(false);
@@ -167,12 +164,6 @@ export default function App() {
     localStorage.removeItem('webpro_payments');
     sessionStorage.clear();
     showToast('Anda telah keluar dari sistem.');
-  };
-
-  const handleOpenHotlinkUtility = (url?: string) => {
-    if (url) setHotlinkInitialUrl(url);
-    else setHotlinkInitialUrl('');
-    setIsHotlinkModalOpen(true);
   };
 
   const handleOpenNota = (trx: Transaction) => {
@@ -431,7 +422,6 @@ export default function App() {
         currentView={currentView}
         onSelectView={setCurrentView}
         onOpenPrintReport={() => setIsPrintModalOpen(true)}
-        onOpenHotlinkUtility={() => handleOpenHotlinkUtility()}
         onLogout={handleLogout}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
@@ -446,7 +436,6 @@ export default function App() {
           onSearchChange={setSearchQuery}
           userName={currentUser?.username || 'User'}
           userEmail={currentUser?.email}
-          onOpenHotlinkUtility={() => handleOpenHotlinkUtility()}
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           onOpenResetPassword={() => setIsChangePasswordOpen(true)}
           onLogout={handleLogout}
@@ -475,7 +464,6 @@ export default function App() {
               onAddSupplier={handleAddSupplier}
               onUpdateSupplier={handleUpdateSupplier}
               onDeleteSupplier={handleDeleteSupplier}
-              onOpenHotlinkUtility={handleOpenHotlinkUtility}
             />
           )}
 
@@ -487,7 +475,6 @@ export default function App() {
               onAddItem={handleAddItem}
               onUpdateItem={handleUpdateItem}
               onDeleteItem={handleDeleteItem}
-              onOpenHotlinkUtility={handleOpenHotlinkUtility}
             />
           )}
 
@@ -498,7 +485,6 @@ export default function App() {
               onAddPembeli={handleAddPembeli}
               onUpdatePembeli={handleUpdatePembeli}
               onDeletePembeli={handleDeletePembeli}
-              onOpenHotlinkUtility={handleOpenHotlinkUtility}
             />
           )}
 
@@ -522,12 +508,11 @@ export default function App() {
               searchQuery={searchQuery}
               onAddPayment={handleAddPayment}
               onUpdateStatus={handleUpdatePaymentStatus}
-              onOpenHotlinkUtility={handleOpenHotlinkUtility}
             />
           )}
 
           {currentView === 'help' && (
-            <HelpView onOpenHotlinkUtility={() => handleOpenHotlinkUtility()} />
+            <HelpView />
           )}
 
           {currentView === 'admin' && currentUser?.role === 'admin' && (
@@ -537,12 +522,6 @@ export default function App() {
       </div>
 
       {/* Global Modals */}
-      <HotlinkHelperModal
-        isOpen={isHotlinkModalOpen}
-        onClose={() => setIsHotlinkModalOpen(false)}
-        initialUrl={hotlinkInitialUrl}
-      />
-
       <PrintReportModal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}

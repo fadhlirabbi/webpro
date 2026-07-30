@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Users, UserPlus, ShieldCheck, Trash2, Edit, CheckCircle, XCircle,
-  Key, Activity, Lock, Unlock, Eraser, RefreshCw, AlertTriangle, Check
+  Users, UserPlus, ShieldCheck, Trash2, CheckCircle, XCircle,
+  Key, Lock, Unlock, Eraser, RefreshCw, AlertTriangle, Check, Eye, EyeOff
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8082/api';
@@ -18,6 +18,7 @@ interface User {
   role: string;
   status: string;
   failed_attempts: number;
+  locked_until: string | null;
   activeSessions: number;
   created_at: string;
 }
@@ -29,27 +30,16 @@ interface Approval {
   created_at: string;
 }
 
-interface Stats {
-  users: {
-    total_users: number;
-    active_users: number;
-    pending_users: number;
-    locked_users: number;
-    banned_users: number
-  };
-  approvals: { total: number; pending: number };
-  sessions: { active_sessions: number };
-}
-
 export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'approvals'>('overview');
+  const [activeTab, setActiveTab] = useState<'users' | 'approvals'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState<string | null>(null);
+  const [tempPasswords, setTempPasswords] = useState<{ [key: string]: string }>({});
 
   const fetchWithAuth = useCallback(async (endpoint: string, options: RequestInit = {}) => {
     try {
@@ -83,15 +73,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
     setLoading(true);
     setError('');
     try {
-      const [usersResult, approvalsResult, statsResult] = await Promise.all([
+      const [usersResult, approvalsResult] = await Promise.all([
         fetchWithAuth('/admin/users'),
         fetchWithAuth('/admin/pending-approvals'),
-        fetchWithAuth('/admin/stats'),
       ]);
 
       setUsers(usersResult.data.users || []);
       setApprovals(approvalsResult.data.approvals || []);
-      setStats(statsResult.data);
     } catch (err: any) {
       setError(err.message || 'Gagal memuat data');
     } finally {
@@ -127,7 +115,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
 
   const handleReject = async (approvalId: string) => {
     const reason = prompt('Alasan penolakan (opsional):');
-    if (reason === null) return; // User cancelled
+    if (reason === null) return;
 
     setActionLoading(approvalId);
     try {
@@ -177,32 +165,16 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
   };
 
   const handleResetPassword = async (userId: string) => {
-    if (!confirm('Reset password user ini?\nPassword baru akan dikirim ke email user.')) return;
-
     setActionLoading(userId);
     try {
       const result = await fetchWithAuth(`/admin/reset-user-password/${userId}`, {
         method: 'POST',
       });
-      showSuccess(`Password direset.\nPassword sementara: ${result.data.tempPassword}`);
+      const tempPass = result.data.tempPassword || 'password123';
+      setTempPasswords(prev => ({ ...prev, [userId]: tempPass }));
+      setShowPassword(userId);
+      showSuccess(`Password direset. Password sementara: ${tempPass}`);
       await loadData();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleEraseData = async (userId: string) => {
-    if (!confirm('⚠️ PERINGATAN!\nSemua data user akan dihapus permanen!\n\nYakin melanjutkan?')) return;
-    if (!confirm('Konfirmasi:\nKlik OK untuk menghapus semua data.')) return;
-
-    setActionLoading(userId);
-    try {
-      const result = await fetchWithAuth(`/admin/erase-user-data/${userId}`, {
-        method: 'POST',
-      });
-      showSuccess(result.data.message || 'Semua data user berhasil dihapus');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -255,6 +227,14 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
     );
   };
 
+  const stats = {
+    total: users.length,
+    active: users.filter(u => u.status === 'active').length,
+    pending: users.filter(u => u.status === 'pending').length,
+    locked: users.filter(u => u.status === 'locked').length,
+    banned: users.filter(u => u.status === 'banned').length,
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -274,6 +254,30 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
         >
           <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
         </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="bg-[#131b2e] p-3 rounded-xl border border-slate-800 text-center">
+          <div className="text-2xl font-bold text-white">{stats.total}</div>
+          <div className="text-xs text-slate-400">Total User</div>
+        </div>
+        <div className="bg-[#131b2e] p-3 rounded-xl border border-slate-800 text-center">
+          <div className="text-2xl font-bold text-green-400">{stats.active}</div>
+          <div className="text-xs text-slate-400">Active</div>
+        </div>
+        <div className="bg-[#131b2e] p-3 rounded-xl border border-slate-800 text-center">
+          <div className="text-2xl font-bold text-yellow-400">{stats.pending}</div>
+          <div className="text-xs text-slate-400">Pending</div>
+        </div>
+        <div className="bg-[#131b2e] p-3 rounded-xl border border-slate-800 text-center">
+          <div className="text-2xl font-bold text-orange-400">{stats.locked}</div>
+          <div className="text-xs text-slate-400">Locked</div>
+        </div>
+        <div className="bg-[#131b2e] p-3 rounded-xl border border-slate-800 text-center">
+          <div className="text-2xl font-bold text-red-400">{stats.banned}</div>
+          <div className="text-xs text-slate-400">Banned</div>
+        </div>
       </div>
 
       {/* Alerts */}
@@ -299,12 +303,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-800 pb-2">
         <button
-          onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 text-sm rounded-t-lg transition-colors ${activeTab === 'overview' ? 'bg-cyan-500/20 text-cyan-400' : 'text-slate-400 hover:text-white'}`}
-        >
-          <Activity className="w-4 h-4 inline mr-1" /> Overview
-        </button>
-        <button
           onClick={() => setActiveTab('users')}
           className={`px-4 py-2 text-sm rounded-t-lg transition-colors ${activeTab === 'users' ? 'bg-cyan-500/20 text-cyan-400' : 'text-slate-400 hover:text-white'}`}
         >
@@ -329,29 +327,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
         </div>
       ) : (
         <>
-          {/* Overview Tab */}
-          {activeTab === 'overview' && stats && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-[#131b2e] p-4 rounded-xl border border-slate-800">
-                <div className="text-3xl font-bold text-white">{stats.users.total_users}</div>
-                <div className="text-sm text-slate-400">Total Users</div>
-              </div>
-              <div className="bg-[#131b2e] p-4 rounded-xl border border-slate-800">
-                <div className="text-3xl font-bold text-green-400">{stats.users.active_users}</div>
-                <div className="text-sm text-slate-400">Active Users</div>
-              </div>
-              <div className="bg-[#131b2e] p-4 rounded-xl border border-slate-800">
-                <div className="text-3xl font-bold text-yellow-400">{stats.approvals.pending}</div>
-                <div className="text-sm text-slate-400">Pending Approvals</div>
-              </div>
-              <div className="bg-[#131b2e] p-4 rounded-xl border border-slate-800">
-                <div className="text-3xl font-bold text-cyan-400">{stats.sessions.active_sessions}</div>
-                <div className="text-sm text-slate-400">Active Sessions</div>
-              </div>
-            </div>
-          )}
-
-          {/* Users Tab */}
+          {/* Users Tab - Consolidated Table */}
           {activeTab === 'users' && (
             <div className="bg-[#131b2e] rounded-xl border border-slate-800 overflow-hidden">
               <div className="overflow-x-auto">
@@ -361,8 +337,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
                       <th className="px-4 py-3">User</th>
                       <th className="px-4 py-3">Role</th>
                       <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Sessions</th>
-                      <th className="px-4 py-3">Failed</th>
+                      <th className="px-4 py-3">Security</th>
+                      <th className="px-4 py-3">Login</th>
+                      <th className="px-4 py-3">Bergabung</th>
                       <th className="px-4 py-3">Actions</th>
                     </tr>
                   </thead>
@@ -377,23 +354,35 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
                           <select
                             value={user.role}
                             onChange={(e) => handleChangeRole(user.id, e.target.value)}
-                            className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs"
+                            className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs disabled:opacity-50"
                             disabled={user.role === 'admin' || actionLoading === user.id}
                           >
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
                           </select>
                         </td>
-                        <td className="px-4 py-3">{getStatusBadge(user.status)}</td>
                         <td className="px-4 py-3">
-                          <span className={user.activeSessions >= 2 ? 'text-orange-400' : 'text-slate-400'}>
-                            {user.activeSessions}/2
-                          </span>
+                          {getStatusBadge(user.status)}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={user.failed_attempts >= 3 ? 'text-red-400' : 'text-slate-400'}>
-                            {user.failed_attempts}/3
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs ${user.failed_attempts >= 3 ? 'text-red-400' : 'text-slate-400'}`}>
+                              Gagal: {user.failed_attempts}/3
+                            </span>
+                            {showPassword === user.id && tempPasswords[user.id] && (
+                              <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">
+                                <EyeOff className="w-3 h-3 inline" /> {tempPasswords[user.id]}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs ${user.activeSessions >= 2 ? 'text-orange-400' : 'text-slate-400'}`}>
+                            {user.activeSessions}/2 sesi
                           </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-400">
+                          {new Date(user.created_at).toLocaleDateString('id-ID')}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1 flex-wrap">
@@ -414,14 +403,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
                               title="Reset Password"
                             >
                               <Key className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleEraseData(user.id)}
-                              disabled={actionLoading === user.id}
-                              className="p-1.5 bg-orange-500/20 text-orange-400 rounded hover:bg-orange-500/30 disabled:opacity-50"
-                              title="Erase All Data"
-                            >
-                              <Eraser className="w-4 h-4" />
                             </button>
                             {user.status !== 'banned' && user.role !== 'admin' && (
                               <button
@@ -449,7 +430,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
                     ))}
                     {users.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                        <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
                           Tidak ada user
                         </td>
                       </tr>
@@ -469,45 +450,49 @@ export const AdminView: React.FC<AdminViewProps> = ({ token, onLogout }) => {
                   <p className="text-slate-400">Tidak ada permintaan pendaftaran</p>
                 </div>
               ) : (
-                approvals.map((approval) => (
-                  <div key={approval.id} className="bg-[#131b2e] p-4 rounded-xl border border-slate-800">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-white">{approval.username}</div>
-                        <div className="text-sm text-slate-400">{approval.email}</div>
-                        <div className="text-xs text-slate-500 mt-1">
-                          {new Date(approval.created_at).toLocaleString('id-ID')}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleApprove(approval.id)}
-                          disabled={actionLoading === approval.id}
-                          className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 flex items-center gap-2 disabled:opacity-50"
-                        >
-                          {actionLoading === approval.id ? (
-                            <div className="animate-spin w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full"></div>
-                          ) : (
-                            <CheckCircle className="w-4 h-4" />
-                          )}
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleReject(approval.id)}
-                          disabled={actionLoading === approval.id}
-                          className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 flex items-center gap-2 disabled:opacity-50"
-                        >
-                          {actionLoading === approval.id ? (
-                            <div className="animate-spin w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
-                          ) : (
-                            <XCircle className="w-4 h-4" />
-                          )}
-                          Reject
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
+                <div className="bg-[#131b2e] rounded-xl border border-slate-800 overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-slate-900/50">
+                      <tr className="text-left text-xs text-slate-400 uppercase">
+                        <th className="px-4 py-3">Username</th>
+                        <th className="px-4 py-3">Email</th>
+                        <th className="px-4 py-3">Tanggal</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {approvals.map((approval) => (
+                        <tr key={approval.id} className="text-sm">
+                          <td className="px-4 py-3 font-medium text-white">{approval.username}</td>
+                          <td className="px-4 py-3 text-slate-400">{approval.email}</td>
+                          <td className="px-4 py-3 text-xs text-slate-500">
+                            {new Date(approval.created_at).toLocaleString('id-ID')}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex gap-2 justify-end">
+                              <button
+                                onClick={() => handleApprove(approval.id)}
+                                disabled={actionLoading === approval.id}
+                                className="px-3 py-1.5 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleReject(approval.id)}
+                                disabled={actionLoading === approval.id}
+                                className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                Reject
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}

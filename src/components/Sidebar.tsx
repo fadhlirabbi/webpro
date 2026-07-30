@@ -11,7 +11,6 @@ import {
   HelpCircle,
   LogOut,
   Crown,
-  Link2,
   X,
   ShieldCheck
 } from 'lucide-react';
@@ -20,7 +19,6 @@ interface SidebarProps {
   currentView: ViewMode;
   onSelectView: (view: ViewMode) => void;
   onOpenPrintReport: () => void;
-  onOpenHotlinkUtility: () => void;
   onLogout: () => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
@@ -31,7 +29,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   onSelectView,
   onOpenPrintReport,
-  onOpenHotlinkUtility,
   onLogout,
   isOpenMobile = false,
   onCloseMobile,
@@ -118,19 +115,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Action Buttons & Bottom Navigation */}
         <div className="p-4 sm:p-5 space-y-3 border-t border-slate-800/80 bg-[#0f172a]">
-          {/* Hotlink HTML Helper Quick Button */}
-          <button
-            onClick={() => {
-              onOpenHotlinkUtility();
-              onCloseMobile?.();
-            }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/50 text-cyan-400 rounded-xl text-xs font-semibold transition-all group cursor-pointer"
-            title="Buka Utility Generator Hotlink Gambar HTML"
-          >
-            <Link2 className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
-            <span>Hotlink HTML Helper</span>
-          </button>
-
           {/* Print Report CTA Button */}
           <button
             onClick={() => {

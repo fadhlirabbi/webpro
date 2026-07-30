@@ -9,7 +9,6 @@ interface PembayaranViewProps {
   searchQuery: string;
   onAddPayment: (payment: Omit<Payment, 'id' | 'paymentNo'>) => void;
   onUpdateStatus: (id: string, status: any) => void;
-  onOpenHotlinkUtility: (url?: string) => void;
 }
 
 export const PembayaranView: React.FC<PembayaranViewProps> = ({
@@ -17,7 +16,6 @@ export const PembayaranView: React.FC<PembayaranViewProps> = ({
   searchQuery,
   onAddPayment,
   onUpdateStatus,
-  onOpenHotlinkUtility,
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [activeProofUrl, setActiveProofUrl] = useState<string | null>(null);

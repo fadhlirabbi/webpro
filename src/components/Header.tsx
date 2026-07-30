@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewMode } from '../types';
-import { Search, Sparkles, UserCheck, Menu, LogOut, Lock, ChevronDown } from 'lucide-react';
+import { Search, UserCheck, Menu, LogOut, Lock, ChevronDown } from 'lucide-react';
 
 interface HeaderProps {
   currentView: ViewMode;
@@ -8,7 +8,6 @@ interface HeaderProps {
   onSearchChange: (query: string) => void;
   userName?: string;
   userEmail?: string;
-  onOpenHotlinkUtility: () => void;
   onOpenMobileMenu?: () => void;
   onOpenResetPassword: () => void;
   onLogout: () => void;
@@ -20,7 +19,6 @@ export const Header: React.FC<HeaderProps> = ({
   onSearchChange,
   userName = 'User',
   userEmail,
-  onOpenHotlinkUtility,
   onOpenMobileMenu,
   onOpenResetPassword,
   onLogout,
@@ -90,16 +88,6 @@ export const Header: React.FC<HeaderProps> = ({
             className="w-full bg-[#131b2e] border border-slate-800 rounded-xl pl-8 sm:pl-9 pr-2 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-all"
           />
         </div>
-
-        {/* Hotlink HTML Tag Badge */}
-        <button
-          onClick={onOpenHotlinkUtility}
-          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#131b2e] border border-slate-800 hover:border-cyan-500/60 rounded-xl text-xs font-semibold text-cyan-400 transition-colors cursor-pointer"
-          title="Buka Hotlink & HTML Image Generator"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-[11px] font-mono">HTML Hotlink</span>
-        </button>
 
         {/* User Profile Dropdown */}
         <div className="flex items-center gap-2 pl-2 border-l border-slate-800 relative" ref={profileRef}>
