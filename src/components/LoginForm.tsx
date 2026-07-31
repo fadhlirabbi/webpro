@@ -157,6 +157,44 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetCode || !newPassword) {
+      setErrorMsg('Kode reset dan password baru wajib diisi.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setErrorMsg('Password minimal 6 karakter.');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg('');
+
+    try {
+      const response = await fetch(`${API_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, token: resetCode, newPassword })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Gagal reset password');
+      }
+
+      setSuccessMsg('Password berhasil direset! Silakan login dengan password baru.');
+      setTimeout(() => switchMode('login'), 3000);
+
+    } catch (error: any) {
+      setErrorMsg(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // ==================== LOGIN FORM ====================
   if (mode === 'login') {
     return (

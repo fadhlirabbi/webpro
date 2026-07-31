@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=https://api-webpro.yttahomeserver.online/api
     container_name: webpro-admin-dashboard
     ports:
       - "8081:80"

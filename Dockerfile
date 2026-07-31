@@ -3,6 +3,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build arguments
+ARG VITE_API_URL=https://api-webpro.yttahomeserver.online/api
+
+# Set env for build
+ENV VITE_API_URL=$VITE_API_URL
+
 # Copy package files first for better caching
 COPY package*.json ./
 COPY bun.lock* ./
